@@ -8,6 +8,7 @@ public class MedicoListDTO {
     private String email;
     private String crm;
     private Especialidade especialidade;
+    private String nomeUsuario;
 
     public MedicoListDTO(String nome, String email, String crm, Especialidade especialidade) {
         this.nome = nome;
@@ -20,5 +21,6 @@ public class MedicoListDTO {
     public String getEmail() { return email; }
     public String getCrm() { return crm; }
     public Especialidade getEspecialidade() { return especialidade; }
+    public String getNomeUsuario() { return nomeUsuario; }
 }
 

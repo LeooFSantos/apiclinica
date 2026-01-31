@@ -5,31 +5,31 @@ import jakarta.validation.constraints.NotBlank;
 public class LoginDTO {
 
     @NotBlank(message = "Nome de usuário é obrigatório")
-    private String username;
+    private String nomeUsuario;
 
     @NotBlank(message = "Senha é obrigatória")
-    private String password;
+    private String senha;
 
     public LoginDTO() {}
 
-    public LoginDTO(String username, String password) {
-        this.username = username;
-        this.password = password;
+    public LoginDTO(String nomeUsuario, String senha) {
+        this.nomeUsuario = nomeUsuario;
+        this.senha = senha;
     }
 
-    public String getUsername() {
-        return username;
+    public String getNomeUsuario() {
+        return nomeUsuario;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setNomeUsuario(String nomeUsuario) {
+        this.nomeUsuario = nomeUsuario;
     }
 
-    public String getPassword() {
-        return password;
+    public String getSenha() {
+        return senha;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setSenha(String senha) {
+        this.senha = senha;
     }
 }

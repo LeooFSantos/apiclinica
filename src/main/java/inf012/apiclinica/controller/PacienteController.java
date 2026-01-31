@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/api/pacientes")
@@ -32,6 +33,14 @@ public class PacienteController {
     @GetMapping
     public Page<PacienteListDTO> listar(@PageableDefault(size = 10, sort = "nome", direction = Sort.Direction.ASC) Pageable pageable) {
         return service.listar(pageable);
+    }
+
+    @GetMapping("/me")
+    public Paciente me(Authentication auth) {
+        if (auth == null) {
+            throw new RuntimeException("Não autenticado");
+        }
+        return service.buscarPorNomeUsuario(auth.getName());
     }
 
     @PutMapping("/{id}")

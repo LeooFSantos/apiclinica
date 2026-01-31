@@ -9,6 +9,9 @@ public interface PacienteRepository extends JpaRepository<Paciente, Long> {
 
     boolean existsByCpf(String cpf);
     boolean existsByEmail(String email);
+    boolean existsByNomeUsuario(String nomeUsuario);
 
     Page<Paciente> findAllByAtivoTrue(Pageable pageable);
+
+    Paciente findByNomeUsuario(String nomeUsuario);
 }

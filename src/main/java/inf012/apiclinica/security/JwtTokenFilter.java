@@ -9,9 +9,15 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import inf012.apiclinica.repository.PacienteRepository;
+import inf012.apiclinica.repository.MedicoRepository;
+import inf012.apiclinica.model.Paciente;
+import inf012.apiclinica.model.Medico;
 
 import java.io.IOException;
 
@@ -24,6 +30,12 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     @Autowired
     private UserDetailsService userDetailsService;
 
+    @Autowired
+    private PacienteRepository pacienteRepository;
+
+    @Autowired
+    private MedicoRepository medicoRepository;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -31,7 +43,12 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             String token = getTokenFromRequest(request);
             if (StringUtils.hasText(token) && tokenProvider.validateToken(token)) {
                 String username = tokenProvider.getUsernameFromToken(token);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                UserDetails userDetails;
+                try {
+                    userDetails = userDetailsService.loadUserByUsername(username);
+                } catch (UsernameNotFoundException ex) {
+                    userDetails = carregarPorRepositorio(username);
+                }
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -48,5 +65,25 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             return bearerToken.substring(7);
         }
         return null;
+    }
+
+    private UserDetails carregarPorRepositorio(String username) {
+        Paciente paciente = pacienteRepository.findByNomeUsuario(username);
+        if (paciente != null) {
+            return User.withUsername(username)
+                    .password("")
+                    .roles("USER")
+                    .build();
+        }
+
+        Medico medico = medicoRepository.findByNomeUsuario(username);
+        if (medico != null) {
+            return User.withUsername(username)
+                    .password("")
+                    .roles("MEDICO")
+                    .build();
+        }
+
+        throw new UsernameNotFoundException("Usuário não encontrado");
     }
 }

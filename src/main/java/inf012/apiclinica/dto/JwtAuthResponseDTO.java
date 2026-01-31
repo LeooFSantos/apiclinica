@@ -3,12 +3,12 @@ package inf012.apiclinica.dto;
 public class JwtAuthResponseDTO {
 
     private String token;
-    private String type = "Bearer";
-    private String username;
+    private String tipo = "Bearer";
+    private String nomeUsuario;
 
-    public JwtAuthResponseDTO(String token, String username) {
+    public JwtAuthResponseDTO(String token, String nomeUsuario) {
         this.token = token;
-        this.username = username;
+        this.nomeUsuario = nomeUsuario;
     }
 
     public String getToken() {
@@ -20,18 +20,18 @@ public class JwtAuthResponseDTO {
     }
 
     public String getType() {
-        return type;
+        return tipo;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setType(String tipo) {
+        this.tipo = tipo;
     }
 
-    public String getUsername() {
-        return username;
+    public String getNomeUsuario() {
+        return nomeUsuario;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setNomeUsuario(String nomeUsuario) {
+        this.nomeUsuario = nomeUsuario;
     }
 }

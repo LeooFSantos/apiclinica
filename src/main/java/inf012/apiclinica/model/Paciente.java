@@ -23,6 +23,11 @@ public class Paciente {
     @Embedded
     private Endereco endereco;
 
+    @Column(unique = true, nullable = false)
+    private String nomeUsuario;
+
+    private String senha;
+
     private Boolean ativo = true;
 
     public Long getId() { return id; }
@@ -42,6 +47,12 @@ public class Paciente {
 
     public Endereco getEndereco() { return endereco; }
     public void setEndereco(Endereco endereco) { this.endereco = endereco; }
+
+    public String getNomeUsuario() { return nomeUsuario; }
+    public void setNomeUsuario(String nomeUsuario) { this.nomeUsuario = nomeUsuario; }
+
+    public String getSenha() { return senha; }
+    public void setSenha(String senha) { this.senha = senha; }
 
     public Boolean getAtivo() { return ativo; }
     public void setAtivo(Boolean ativo) { this.ativo = ativo; }

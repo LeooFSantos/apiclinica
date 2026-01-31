@@ -11,6 +11,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import java.util.stream.Collectors;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -23,25 +27,35 @@ public class AuthController {
     private JwtTokenProvider tokenProvider;
 
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginDTO loginDTO) {
+    public ResponseEntity<?> autenticarUsuario(@Valid @RequestBody LoginDTO loginDTO) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            loginDTO.getUsername(),
-                            loginDTO.getPassword()
+                            loginDTO.getNomeUsuario(),
+                            loginDTO.getSenha()
                     )
             );
 
             String token = tokenProvider.generateToken(authentication);
-            return ResponseEntity.ok(new JwtAuthResponseDTO(token, loginDTO.getUsername()));
+            return ResponseEntity.ok(new JwtAuthResponseDTO(token, loginDTO.getNomeUsuario()));
         } catch (AuthenticationException e) {
             return ResponseEntity.badRequest().body("Credenciais inválidas!");
         }
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshToken(@RequestParam String username) {
-        String newToken = tokenProvider.generateTokenFromUsername(username);
-        return ResponseEntity.ok(new JwtAuthResponseDTO(newToken, username));
+    public ResponseEntity<?> renovarToken(@RequestParam String nomeUsuario) {
+        String newToken = tokenProvider.generateTokenFromUsername(nomeUsuario);
+        return ResponseEntity.ok(new JwtAuthResponseDTO(newToken, nomeUsuario));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> me(Authentication authentication) {
+        if (authentication == null) return ResponseEntity.status(401).build();
+        String nome = authentication.getName();
+        var roles = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(Map.of("nomeUsuario", nome, "roles", roles));
     }
 }

@@ -6,6 +6,9 @@ import inf012.apiclinica.repository.PacienteRepository;
 import inf012.apiclinica.dto.PacienteCreateDTO;
 import inf012.apiclinica.dto.PacienteUpdateDTO;
 import inf012.apiclinica.dto.PacienteListDTO;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -15,9 +18,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class PacienteService {
 
     private final PacienteRepository repository;
+    private final PasswordEncoder passwordEncoder;
+    private final InMemoryUserDetailsManager userDetailsManager;
 
-    public PacienteService(PacienteRepository repository) {
+    public PacienteService(PacienteRepository repository,
+                           PasswordEncoder passwordEncoder,
+                           InMemoryUserDetailsManager userDetailsManager) {
         this.repository = repository;
+        this.passwordEncoder = passwordEncoder;
+        this.userDetailsManager = userDetailsManager;
     }
 
     @Transactional
@@ -29,6 +38,10 @@ public class PacienteService {
 
         if (repository.existsByEmail(dto.getEmail())) {
             throw new RuntimeException("E-mail já cadastrado");
+        }
+
+        if (repository.existsByNomeUsuario(dto.getNomeUsuario())) {
+            throw new RuntimeException("Nome de usuário já cadastrado");
         }
 
         Endereco endereco = new Endereco();
@@ -45,7 +58,16 @@ public class PacienteService {
         paciente.setEmail(dto.getEmail());
         paciente.setTelefone(dto.getTelefone());
         paciente.setCpf(dto.getCpf());
+        paciente.setNomeUsuario(dto.getNomeUsuario());
+        paciente.setSenha(passwordEncoder.encode(dto.getSenha()));
         paciente.setEndereco(endereco);
+
+        if (!userDetailsManager.userExists(dto.getNomeUsuario())) {
+            userDetailsManager.createUser(User.withUsername(dto.getNomeUsuario())
+                    .password(passwordEncoder.encode(dto.getSenha()))
+                    .roles("USER")
+                    .build());
+        }
 
         return repository.save(paciente);
     }
@@ -57,6 +79,14 @@ public class PacienteService {
                         p.getEmail(),
                         p.getCpf()
                 ));
+    }
+
+    public Paciente buscarPorNomeUsuario(String nomeUsuario) {
+        Paciente paciente = repository.findByNomeUsuario(nomeUsuario);
+        if (paciente == null) {
+            throw new RuntimeException("Paciente não encontrado");
+        }
+        return paciente;
     }
 
     @Transactional

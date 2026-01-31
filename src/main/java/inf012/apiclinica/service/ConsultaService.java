@@ -5,14 +5,19 @@ import inf012.apiclinica.model.Paciente;
 import inf012.apiclinica.model.Medico;
 import inf012.apiclinica.dto.ConsultaCreateDTO;
 import inf012.apiclinica.dto.ConsultaCancelamentoDTO;
+import inf012.apiclinica.dto.DisponibilidadeMedicoDTO;
 import inf012.apiclinica.repository.ConsultaRepository;
 import inf012.apiclinica.repository.PacienteRepository;
 import inf012.apiclinica.repository.MedicoRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.*;
 import java.util.List;
 import java.util.Random;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 @Service
 public class ConsultaService {
@@ -114,5 +119,63 @@ public class ConsultaService {
 
         consulta.setMotivoCancelamento(dto.getMotivo());
         consulta.setCanceladaEm(LocalDateTime.now());
+    }
+
+    public java.util.List<Consulta> listarPorMedicoENoDia(String nomeUsuario, java.time.LocalDate dia) {
+        Medico medico = medicoRepository.findByNomeUsuario(nomeUsuario);
+        if (medico == null) return java.util.Collections.emptyList();
+        java.time.LocalDateTime inicio = dia.atStartOfDay();
+        java.time.LocalDateTime fim = inicio.plusDays(1);
+        return consultaRepository.findByMedicoIdAndDataHoraBetween(medico.getId(), inicio, fim);
+    }
+
+    public Page<Consulta> listarPorPaciente(String nomeUsuario, Pageable pageable) {
+        Paciente paciente = pacienteRepository.findByNomeUsuario(nomeUsuario);
+        if (paciente == null) {
+            return Page.empty(pageable);
+        }
+        return consultaRepository.findByPacienteId(paciente.getId(), pageable);
+    }
+
+    public List<DisponibilidadeMedicoDTO> listarDisponibilidade( inf012.apiclinica.model.Especialidade especialidade, LocalDate dia) {
+        LocalDate diaEfetivo = (dia == null) ? LocalDate.now() : dia;
+
+        if (diaEfetivo.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            return List.of();
+        }
+
+        List<Medico> medicos = medicoRepository.findAllByAtivoTrueAndEspecialidade(especialidade);
+        LocalDateTime inicio = diaEfetivo.atStartOfDay();
+        LocalDateTime fim = inicio.plusDays(1);
+
+        LocalDateTime limite = LocalDateTime.now().plusMinutes(30);
+
+        return medicos.stream().map(m -> {
+            List<Consulta> consultas = consultaRepository.findByMedicoIdAndDataHoraBetween(m.getId(), inicio, fim);
+            List<LocalTime> ocupados = consultas.stream()
+                    .filter(c -> c.getCanceladaEm() == null)
+                    .map(c -> c.getDataHora().toLocalTime())
+                    .collect(Collectors.toList());
+
+            List<String> horarios = new ArrayList<>();
+            for (int h = 7; h <= 18; h++) {
+                LocalDateTime slot = LocalDateTime.of(diaEfetivo, LocalTime.of(h, 0));
+                if (slot.isBefore(limite)) {
+                    continue;
+                }
+                if (!ocupados.contains(LocalTime.of(h, 0))) {
+                    horarios.add(String.format("%02d:00", h));
+                }
+            }
+
+            return new DisponibilidadeMedicoDTO(
+                    m.getId(),
+                    m.getNome(),
+                    m.getCrm(),
+                    m.getCrmUf(),
+                    m.getEspecialidade(),
+                    horarios
+            );
+        }).collect(Collectors.toList());
     }
 }

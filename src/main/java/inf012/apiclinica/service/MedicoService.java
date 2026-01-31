@@ -23,12 +23,12 @@ public class MedicoService {
     @Transactional
     public Medico cadastrar(MedicoCreateDTO dto) {
 
-        if (repository.existsByCrm(dto.getCrm())) {
-            throw new RuntimeException("CRM já cadastrado");
+        if (repository.existsByCrmAndCrmUf(dto.getCrm(), dto.getCrmUf())) {
+            throw new RuntimeException("CRM já cadastrado para esta UF");
         }
 
-        if (repository.existsByEmail(dto.getEmail())) {
-            throw new RuntimeException("E-mail já cadastrado");
+        if (repository.existsByNomeUsuario(dto.getNomeUsuario())) {
+            throw new RuntimeException("Nome de usuário já cadastrado");
         }
 
         Endereco endereco = new Endereco();
@@ -45,7 +45,10 @@ public class MedicoService {
         medico.setEmail(dto.getEmail());
         medico.setTelefone(dto.getTelefone());
         medico.setCrm(dto.getCrm());
+        medico.setCrmUf(dto.getCrmUf());
         medico.setEspecialidade(dto.getEspecialidade());
+        medico.setNomeUsuario(dto.getNomeUsuario());
+        medico.setSenha(dto.getSenha());
         medico.setEndereco(endereco);
 
         return repository.save(medico);

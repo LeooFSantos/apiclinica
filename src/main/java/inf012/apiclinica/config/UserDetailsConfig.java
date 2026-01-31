@@ -11,20 +11,22 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 @Configuration
 public class UserDetailsConfig {
 
-    @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
-        UserDetails admin = User.builder()
-                .username("admin")
-                .password(passwordEncoder.encode("admin123"))
-                .roles("ADMIN")
-                .build();
+        @Bean
+        public InMemoryUserDetailsManager userDetailsService(PasswordEncoder passwordEncoder) {
+        var admin = User.builder()
+            .username("admin")
+            .password(passwordEncoder.encode("admin123"))
+            .roles("ADMIN")
+            .build();
 
-        UserDetails user = User.builder()
-                .username("user")
-                .password(passwordEncoder.encode("user123"))
-                .roles("USER")
-                .build();
+        var paciente = User.builder()
+            .username("paciente1")
+            .password(passwordEncoder.encode("pac1"))
+            .roles("USER")
+            .build();
 
-        return new InMemoryUserDetailsManager(admin, user);
-    }
+        // Note: no MEDICO user created here by default. Medico accounts are created only after admin approval.
+
+        return new InMemoryUserDetailsManager(admin, paciente);
+        }
 }

@@ -5,6 +5,7 @@ public class PacienteListDTO {
     private String nome;
     private String email;
     private String cpf;
+    private String nomeUsuario;
 
     public PacienteListDTO(String nome, String email, String cpf) {
         this.nome = nome;
@@ -15,4 +16,5 @@ public class PacienteListDTO {
     public String getNome() { return nome; }
     public String getEmail() { return email; }
     public String getCpf() { return cpf; }
+    public String getNomeUsuario() { return nomeUsuario; }
 }

@@ -1,8 +1,11 @@
 package inf012.apiclinica.model;
 
 public enum Especialidade {
-    ORTOPEDIA,
     CARDIOLOGIA,
-    GINECOLOGIA,
-    DERMATOLOGIA
+    DERMATOLOGIA,
+    OFTALMOLOGIA,
+    ORTOPEDIA,
+    PNEUMOLOGIA,
+    GASTROENTEROLOGIA,
+    GINECOLOGIA
 }

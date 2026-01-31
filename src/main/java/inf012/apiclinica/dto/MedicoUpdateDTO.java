@@ -1,31 +1,41 @@
 package inf012.apiclinica.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 public class MedicoUpdateDTO {
 
     @NotBlank
+    @Size(min = 2, max = 100)
     private String nome;
 
     @NotBlank
+    @Pattern(regexp = "\\d{10,11}")
     private String telefone;
 
     @NotBlank
+    @Size(min = 2, max = 120)
     private String logradouro;
 
+    @Pattern(regexp = "\\d{0,10}")
     private String numero;
     private String complemento;
 
     @NotBlank
+    @Size(min = 2, max = 80)
     private String bairro;
 
     @NotBlank
+    @Size(min = 2, max = 80)
     private String cidade;
 
     @NotBlank
+    @Pattern(regexp = "[A-Za-z]{2}")
     private String uf;
 
     @NotBlank
+    @Pattern(regexp = "\\d{8}")
     private String cep;
 
     public String getNome() { return nome; }
