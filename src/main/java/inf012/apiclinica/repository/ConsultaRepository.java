@@ -15,10 +15,21 @@ public interface ConsultaRepository extends JpaRepository<Consulta, Long> {
             LocalDateTime fim
     );
 
+        boolean existsByPacienteIdAndDataHoraBetweenAndCanceladaEmIsNull(
+            Long pacienteId,
+            LocalDateTime inicio,
+            LocalDateTime fim
+        );
+
     boolean existsByMedicoIdAndDataHora(Long medicoId, LocalDateTime dataHora);
+    boolean existsByMedicoIdAndDataHoraAndCanceladaEmIsNull(Long medicoId, LocalDateTime dataHora);
     List<Consulta> findByMedicoIdAndDataHora(Long medicoId, LocalDateTime dataHora);
 
     List<Consulta> findByMedicoIdAndDataHoraBetween(Long medicoId, LocalDateTime inicio, LocalDateTime fim);
 
     Page<Consulta> findByPacienteId(Long pacienteId, Pageable pageable);
+
+    List<Consulta> findByMedicoIdAndDataHoraAfterAndCanceladaEmIsNull(Long medicoId, LocalDateTime dataHora);
+
+    List<Consulta> findByMedicoIdAndCanceladaEmIsNull(Long medicoId);
 }

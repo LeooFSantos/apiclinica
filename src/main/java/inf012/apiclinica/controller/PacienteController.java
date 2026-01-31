@@ -5,6 +5,7 @@ import inf012.apiclinica.service.PacienteService;
 import inf012.apiclinica.dto.PacienteCreateDTO;
 import inf012.apiclinica.dto.PacienteListDTO;
 import inf012.apiclinica.dto.PacienteUpdateDTO;
+import inf012.apiclinica.dto.PacienteSettingsDTO;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -41,6 +42,22 @@ public class PacienteController {
             throw new RuntimeException("Não autenticado");
         }
         return service.buscarPorNomeUsuario(auth.getName());
+    }
+
+    @PutMapping("/me")
+    public Paciente atualizarMe(@RequestBody @Valid PacienteSettingsDTO dto, Authentication auth) {
+        if (auth == null) {
+            throw new RuntimeException("Não autenticado");
+        }
+        return service.atualizarConfiguracoes(auth.getName(), dto);
+    }
+
+    @DeleteMapping("/me")
+    public void inativarMe(Authentication auth) {
+        if (auth == null) {
+            throw new RuntimeException("Não autenticado");
+        }
+        service.inativarPorNomeUsuario(auth.getName());
     }
 
     @PutMapping("/{id}")

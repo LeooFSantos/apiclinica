@@ -5,6 +5,7 @@ import inf012.apiclinica.service.ConsultaService;
 import inf012.apiclinica.dto.ConsultaCreateDTO;
 import inf012.apiclinica.dto.ConsultaCancelamentoDTO;
 import inf012.apiclinica.dto.DisponibilidadeMedicoDTO;
+import inf012.apiclinica.security.JwtTokenProvider;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.data.domain.Page;
@@ -13,6 +14,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -21,9 +23,11 @@ import java.util.List;
 public class ConsultaController {
 
     private final ConsultaService service;
+    private final JwtTokenProvider tokenProvider;
 
-    public ConsultaController(ConsultaService service) {
+    public ConsultaController(ConsultaService service, JwtTokenProvider tokenProvider) {
         this.service = service;
+        this.tokenProvider = tokenProvider;
     }
 
     @PostMapping
@@ -53,6 +57,28 @@ public class ConsultaController {
             @PageableDefault(size = 10, sort = "dataHora", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return service.listarPorPaciente(auth.getName(), pageable);
+    }
+
+    @PostMapping("/medico/cancelar-todas")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancelarTodasDoMedico(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        String nomeUsuario = getNomeUsuario(authHeader);
+        service.cancelarTodasConsultasDoMedico(nomeUsuario);
+    }
+
+    private String getNomeUsuario(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token ausente");
+        }
+        String token = authHeader.substring(7);
+        if (!tokenProvider.validateToken(token)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido");
+        }
+        String nomeUsuario = tokenProvider.getUsernameFromToken(token);
+        if (nomeUsuario == null || nomeUsuario.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido");
+        }
+        return nomeUsuario;
     }
 
     @GetMapping("/disponibilidade")

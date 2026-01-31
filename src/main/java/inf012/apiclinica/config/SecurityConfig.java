@@ -10,10 +10,12 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.core.annotation.Order;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -46,17 +48,26 @@ public class SecurityConfig {
     }
 
     @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring().requestMatchers("/api/medicos/me", "/api/medicos/me/**");
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .cors().configurationSource(corsConfigurationSource()).and()
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/medicos/requests", "/api/medicos/requests/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/pacientes", "/api/pacientes/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/consultas/medico/cancelar-todas").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/consultas", "/api/consultas/**").hasAnyRole("USER","MEDICO","ADMIN")
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/pacientes/me", "/api/pacientes/me/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/pacientes/me", "/api/pacientes/me/**").authenticated()
+                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/pacientes/me", "/api/pacientes/me/**").authenticated()
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/pacientes/me", "/api/pacientes/me/**").authenticated()
                 .requestMatchers("/api/medicos/requests/**").hasRole("ADMIN")
                 .requestMatchers("/api/medicos/**").hasAnyRole("MEDICO","ADMIN")
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()

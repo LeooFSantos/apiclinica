@@ -8,6 +8,11 @@ export default function MedicoDashboard() {
   const [consultas, setConsultas] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [dataFiltro, setDataFiltro] = useState(new Date().toISOString().slice(0, 10));
+  const [consultaCancelamento, setConsultaCancelamento] = useState(null);
+  const [motivoCancelamento, setMotivoCancelamento] = useState('MEDICO_CANCELOU');
+  const [erroCancelamento, setErroCancelamento] = useState('');
+  const [cancelando, setCancelando] = useState(false);
+  const [filtroStatus, setFiltroStatus] = useState('agendadas');
 
   React.useEffect(() => {
     carregarConsultas(dataFiltro);
@@ -49,6 +54,62 @@ export default function MedicoDashboard() {
       return { data: value, hora: '' };
     }
   };
+
+  const podeCancelar = (consulta) => {
+    if (!consulta?.dataHora || consulta.canceladaEm) return false;
+    const dataHora = new Date(consulta.dataHora).getTime();
+    const agora = Date.now();
+    const diffHoras = (dataHora - agora) / (1000 * 60 * 60);
+    return diffHoras >= 24;
+  };
+
+  const abrirCancelamento = (consulta) => {
+    setConsultaCancelamento(consulta);
+    setMotivoCancelamento('MEDICO_CANCELOU');
+    setErroCancelamento('');
+  };
+
+  const fecharCancelamento = () => {
+    setConsultaCancelamento(null);
+    setErroCancelamento('');
+  };
+
+  const confirmarCancelamento = async () => {
+    if (!consultaCancelamento) return;
+    try {
+      setCancelando(true);
+      const token = getAuthToken();
+      const response = await fetch(`${API_ENDPOINTS.CONSULTAS}/${consultaCancelamento.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ motivo: motivoCancelamento }),
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || 'Erro ao cancelar consulta');
+      }
+
+      fecharCancelamento();
+      carregarConsultas(dataFiltro);
+    } catch (err) {
+      setErroCancelamento(err.message);
+    } finally {
+      setCancelando(false);
+    }
+  };
+
+  const totalConsultas = consultas.length;
+  const totalCanceladas = consultas.filter((c) => c.canceladaEm).length;
+  const totalAgendadas = totalConsultas - totalCanceladas;
+  const consultasFiltradas = consultas.filter((c) => {
+    if (filtroStatus === 'agendadas') return !c.canceladaEm;
+    if (filtroStatus === 'canceladas') return !!c.canceladaEm;
+    return true;
+  });
 
   return (
     <div className="medico-dashboard">
@@ -98,12 +159,33 @@ export default function MedicoDashboard() {
               />
             </div>
 
+            <div className="tabs" style={{ marginBottom: '1rem' }}>
+              <button
+                className={`tab ${filtroStatus === 'agendadas' ? 'active' : ''}`}
+                onClick={() => setFiltroStatus('agendadas')}
+              >
+                Agendadas ({totalAgendadas})
+              </button>
+              <button
+                className={`tab ${filtroStatus === 'canceladas' ? 'active' : ''}`}
+                onClick={() => setFiltroStatus('canceladas')}
+              >
+                Canceladas ({totalCanceladas})
+              </button>
+              <button
+                className={`tab ${filtroStatus === 'todas' ? 'active' : ''}`}
+                onClick={() => setFiltroStatus('todas')}
+              >
+                Todas ({totalConsultas})
+              </button>
+            </div>
+
             {carregando ? (
               <div className="loading">
                 <div className="spinner"></div>
               </div>
-            ) : consultas.length === 0 ? (
-              <p className="no-data">Nenhuma consulta agendada para essa data</p>
+            ) : consultasFiltradas.length === 0 ? (
+              <p className="no-data">Nenhuma consulta para esse filtro</p>
             ) : (
               <table className="table">
                 <thead>
@@ -112,14 +194,17 @@ export default function MedicoDashboard() {
                     <th>Paciente</th>
                     <th>Horário</th>
                     <th>Status</th>
+                    <th>Motivo</th>
+                    <th>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {consultas.map(consulta => {
+                  {consultasFiltradas.map(consulta => {
                     const dateTime = consulta.dataHora || consulta.data || consulta.hora || consulta.horario;
                     const { data, hora } = formatDataHora(dateTime);
                     const pacienteNome = consulta.paciente?.nome || consulta.pacienteNome || consulta.paciente || consulta.nomePaciente || '—';
-                    const status = consulta.status || (consulta.cancelado ? 'Cancelada' : 'Agendada');
+                    const status = consulta.status || (consulta.canceladaEm ? 'Cancelada' : 'Agendada');
+                    const motivo = consulta.motivoCancelamento || consulta.motivo || '';
 
                     return (
                       <tr key={consulta.id}>
@@ -127,9 +212,27 @@ export default function MedicoDashboard() {
                         <td>{pacienteNome}</td>
                         <td>{hora}</td>
                         <td>
-                          <span className={`badge ${status === 'Cancelada' ? 'badge-danger' : 'badge-primary'}`}>
+                          <span
+                            className={`badge ${status === 'Cancelada' ? 'badge-danger' : 'badge-primary'}`}
+                            title={status === 'Cancelada' ? `Motivo: ${motivo || '—'}` : ''}
+                          >
                             {status}
                           </span>
+                        </td>
+                        <td>{status === 'Cancelada' ? (motivo || '—') : '—'}</td>
+                        <td>
+                          {consulta.canceladaEm ? (
+                            <span className="badge badge-secondary">—</span>
+                          ) : (
+                            <button
+                              className="btn btn-outline btn-small"
+                              onClick={() => abrirCancelamento(consulta)}
+                              disabled={!podeCancelar(consulta)}
+                              title={!podeCancelar(consulta) ? 'Cancelamento permitido apenas com 24h de antecedência' : ''}
+                            >
+                              Cancelar
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -147,6 +250,36 @@ export default function MedicoDashboard() {
           </>
         )}
       </div>
+
+      {consultaCancelamento && (
+        <div className="modal-backdrop">
+          <div className="modal">
+            <h3>Cancelar Consulta</h3>
+            <div className="modal-body">
+              <p><strong>Consulta:</strong> {consultaCancelamento.dataHora ? new Date(consultaCancelamento.dataHora).toLocaleString() : '—'}</p>
+              <p><strong>Paciente:</strong> {consultaCancelamento.paciente?.nome || '—'}</p>
+
+              <div className="form-group">
+                <label>Motivo do cancelamento</label>
+                <select value={motivoCancelamento} onChange={(e) => setMotivoCancelamento(e.target.value)}>
+                  <option value="MEDICO_CANCELOU">Médico cancelou</option>
+                  <option value="PROBLEMA_AGENDA">Problema de agenda</option>
+                  <option value="EMERGENCIA">Emergência</option>
+                  <option value="OUTROS">Outros</option>
+                </select>
+              </div>
+
+              {erroCancelamento && <div className="alert alert-error">{erroCancelamento}</div>}
+            </div>
+            <div className="modal-actions">
+              <button className="btn btn-outline" onClick={fecharCancelamento} disabled={cancelando}>Voltar</button>
+              <button className="btn btn-danger" onClick={confirmarCancelamento} disabled={cancelando}>
+                {cancelando ? 'Cancelando...' : 'Confirmar Cancelamento'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

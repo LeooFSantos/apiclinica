@@ -12,8 +12,13 @@ public interface MedicoRepository extends JpaRepository<Medico, Long> {
     boolean existsByCrmAndCrmUf(String crm, String crmUf);
     boolean existsByNomeUsuario(String nomeUsuario);
 
+    boolean existsByEmail(String email);
+    boolean existsByEmailAndIdNot(String email, Long id);
+
     Page<Medico> findAllByAtivoTrue(Pageable pageable);
     List<Medico> findAllByAtivoTrue();
+
+    long countByAtivoTrue();
 
     List<Medico> findAllByAtivoTrueAndEspecialidade(inf012.apiclinica.model.Especialidade especialidade);
 

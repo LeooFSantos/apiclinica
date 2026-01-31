@@ -16,6 +16,12 @@ export default function PacienteDashboard() {
   const [horarioSelecionado, setHorarioSelecionado] = useState('');
   const [mensagem, setMensagem] = useState('');
   const [erroAgendamento, setErroAgendamento] = useState('');
+  const [cancelando, setCancelando] = useState(false);
+  const [consultaCancelamento, setConsultaCancelamento] = useState(null);
+  const [motivoCancelamento, setMotivoCancelamento] = useState('PACIENTE_DESISTIU');
+  const [erroCancelamento, setErroCancelamento] = useState('');
+  const [abaConsultas, setAbaConsultas] = useState('agendadas');
+  const [medicosAtivos, setMedicosAtivos] = useState(0);
 
   useEffect(() => {
     carregarDados();
@@ -51,6 +57,15 @@ export default function PacienteDashboard() {
         const data = await responseConsultas.json();
         const list = Array.isArray(data) ? data : data.content || [];
         setConsultas(list);
+      }
+
+      const responseMedicos = await fetch(API_ENDPOINTS.MEDICOS_ATIVOS_COUNT, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (responseMedicos.ok) {
+        const count = await responseMedicos.json();
+        setMedicosAtivos(Number(count) || 0);
       }
     } catch (err) {
       setErro(err.message);
@@ -133,6 +148,7 @@ export default function PacienteDashboard() {
       const payload = {
         pacienteId: paciente.id,
         medicoId: medicoSelecionado ? Number(medicoSelecionado) : null,
+        especialidade,
         dataHora,
       };
 
@@ -160,6 +176,54 @@ export default function PacienteDashboard() {
     }
   };
 
+  const podeCancelar = (consulta) => {
+    if (!consulta?.dataHora || consulta.canceladaEm) return false;
+    const dataHora = new Date(consulta.dataHora).getTime();
+    const agora = Date.now();
+    const diffHoras = (dataHora - agora) / (1000 * 60 * 60);
+    return diffHoras >= 24;
+  };
+
+  const abrirCancelamento = (consulta) => {
+    setConsultaCancelamento(consulta);
+    setMotivoCancelamento('PACIENTE_DESISTIU');
+    setErroCancelamento('');
+  };
+
+  const fecharCancelamento = () => {
+    setConsultaCancelamento(null);
+    setErroCancelamento('');
+  };
+
+  const confirmarCancelamento = async () => {
+    if (!consultaCancelamento) return;
+    try {
+      setCancelando(true);
+      const token = getAuthToken();
+      const response = await fetch(`${API_ENDPOINTS.CONSULTAS}/${consultaCancelamento.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ motivo: motivoCancelamento }),
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || 'Erro ao cancelar consulta');
+      }
+
+      setMensagem('Consulta cancelada com sucesso');
+      fecharCancelamento();
+      carregarDados();
+    } catch (err) {
+      setErroCancelamento(err.message);
+    } finally {
+      setCancelando(false);
+    }
+  };
+
   return (
     <div className="paciente-dashboard">
       <h1>Bem-vindo ao Portal do Paciente</h1>
@@ -167,15 +231,15 @@ export default function PacienteDashboard() {
       <div className="dashboard-cards">
         <div className="card">
           <h3>📅 Consultas Agendadas</h3>
-          <p className="card-number">{consultas.length}</p>
+          <p className="card-number">{consultas.filter(c => !c.canceladaEm).length}</p>
         </div>
         <div className="card">
           <h3>👨‍⚕️ Médicos Disponíveis</h3>
-          <p className="card-number">--</p>
+          <p className="card-number">{medicosAtivos}</p>
         </div>
         <div className="card">
-          <h3>📋 Histórico Médico</h3>
-          <p className="card-number">--</p>
+          <h3>⛔ Consultas Canceladas</h3>
+          <p className="card-number">{consultas.filter(c => c.canceladaEm).length}</p>
         </div>
       </div>
 
@@ -209,30 +273,89 @@ export default function PacienteDashboard() {
         ) : consultas.length === 0 ? (
           <p className="no-data">Nenhuma consulta agendada</p>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Médico</th>
-                <th>Especialidade</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {consultas.map(consulta => (
-                <tr key={consulta.id}>
-                  <td>{consulta.dataHora ? new Date(consulta.dataHora).toLocaleDateString() : '—'}</td>
-                  <td>{consulta.medico?.nome || '—'}</td>
-                  <td>{consulta.medico?.especialidade || '—'}</td>
-                  <td>
-                    <span className={`badge ${consulta.canceladaEm ? 'badge-danger' : 'badge-success'}`}>
-                      {consulta.canceladaEm ? 'Cancelada' : 'Agendada'}
-                    </span>
-                  </td>
+          <>
+            <div className="tabs">
+              <button
+                className={`tab ${abaConsultas === 'agendadas' ? 'active' : ''}`}
+                onClick={() => setAbaConsultas('agendadas')}
+              >
+                Agendadas
+              </button>
+              <button
+                className={`tab ${abaConsultas === 'canceladas' ? 'active' : ''}`}
+                onClick={() => setAbaConsultas('canceladas')}
+              >
+                Canceladas
+              </button>
+              <button
+                className={`tab ${abaConsultas === 'todas' ? 'active' : ''}`}
+                onClick={() => setAbaConsultas('todas')}
+              >
+                Todas
+              </button>
+            </div>
+
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Horário</th>
+                  <th>Médico</th>
+                  <th>Especialidade</th>
+                  <th>Status</th>
+                  <th>Motivo</th>
+                  <th>Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {[...consultas]
+                  .filter(c => {
+                    if (abaConsultas === 'agendadas') return !c.canceladaEm;
+                    if (abaConsultas === 'canceladas') return !!c.canceladaEm;
+                    return true;
+                  })
+                  .sort((a, b) => {
+                    const da = a.dataHora ? new Date(a.dataHora).getTime() : 0;
+                    const db = b.dataHora ? new Date(b.dataHora).getTime() : 0;
+                    return da - db;
+                  })
+                  .map(consulta => {
+                    const motivo = consulta.motivoCancelamento || consulta.motivo || '—';
+                    return (
+                  <tr key={consulta.id}>
+                    <td>{consulta.dataHora ? new Date(consulta.dataHora).toLocaleDateString() : '—'}</td>
+                    <td>{consulta.dataHora ? new Date(consulta.dataHora).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</td>
+                    <td>{consulta.medico?.nome || '—'}</td>
+                    <td>{consulta.medico?.especialidade || '—'}</td>
+                    <td>
+                      <span
+                        className={`badge ${consulta.canceladaEm ? 'badge-danger' : 'badge-success'}`}
+                        title={consulta.canceladaEm ? `Motivo: ${motivo}` : ''}
+                      >
+                        {consulta.canceladaEm ? 'Cancelada' : 'Agendada'}
+                      </span>
+                    </td>
+                    <td>{consulta.canceladaEm ? motivo : '—'}</td>
+                    <td>
+                      {consulta.canceladaEm ? (
+                        <span className="badge badge-secondary">—</span>
+                      ) : (
+                        <button
+                          className="btn btn-outline btn-small"
+                          onClick={() => abrirCancelamento(consulta)}
+                          disabled={!podeCancelar(consulta)}
+                          title={!podeCancelar(consulta) ? 'Cancelamento permitido apenas com 24h de antecedência' : ''}
+                        >
+                          Cancelar
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </>
         )}
           </>
         )}
@@ -325,6 +448,35 @@ export default function PacienteDashboard() {
           </>
         )}
       </div>
+
+      {consultaCancelamento && (
+        <div className="modal-backdrop">
+          <div className="modal">
+            <h3>Cancelar Consulta</h3>
+            <div className="modal-body">
+              <p><strong>Consulta:</strong> {consultaCancelamento.dataHora ? new Date(consultaCancelamento.dataHora).toLocaleString() : '—'}</p>
+              <p><strong>Médico:</strong> {consultaCancelamento.medico?.nome || '—'}</p>
+
+              <div className="form-group">
+                <label>Motivo do cancelamento</label>
+                <select value={motivoCancelamento} onChange={(e) => setMotivoCancelamento(e.target.value)}>
+                  <option value="PACIENTE_DESISTIU">Paciente desistiu</option>
+                  <option value="PROBLEMA_AGENDA">Problema de agenda</option>
+                  <option value="OUTROS">Outros</option>
+                </select>
+              </div>
+
+              {erroCancelamento && <div className="alert alert-error">{erroCancelamento}</div>}
+            </div>
+            <div className="modal-actions">
+              <button className="btn btn-outline" onClick={fecharCancelamento} disabled={cancelando}>Voltar</button>
+              <button className="btn btn-danger" onClick={confirmarCancelamento} disabled={cancelando}>
+                {cancelando ? 'Cancelando...' : 'Confirmar Cancelamento'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

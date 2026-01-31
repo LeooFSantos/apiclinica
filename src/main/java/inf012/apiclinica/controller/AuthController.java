@@ -3,6 +3,8 @@ package inf012.apiclinica.controller;
 import inf012.apiclinica.dto.JwtAuthResponseDTO;
 import inf012.apiclinica.dto.LoginDTO;
 import inf012.apiclinica.security.JwtTokenProvider;
+import inf012.apiclinica.repository.PacienteRepository;
+import inf012.apiclinica.repository.MedicoRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -26,9 +28,24 @@ public class AuthController {
     @Autowired
     private JwtTokenProvider tokenProvider;
 
+    @Autowired
+    private PacienteRepository pacienteRepository;
+
+    @Autowired
+    private MedicoRepository medicoRepository;
+
     @PostMapping("/login")
     public ResponseEntity<?> autenticarUsuario(@Valid @RequestBody LoginDTO loginDTO) {
         try {
+            var paciente = pacienteRepository.findByNomeUsuario(loginDTO.getNomeUsuario());
+            if (paciente != null && Boolean.FALSE.equals(paciente.getAtivo())) {
+                return ResponseEntity.badRequest().body("Cadastro Inativo");
+            }
+            var medico = medicoRepository.findByNomeUsuario(loginDTO.getNomeUsuario());
+            if (medico != null && Boolean.FALSE.equals(medico.getAtivo())) {
+                return ResponseEntity.badRequest().body("Cadastro Inativo");
+            }
+
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             loginDTO.getNomeUsuario(),

@@ -9,6 +9,7 @@ import inf012.apiclinica.dto.DisponibilidadeMedicoDTO;
 import inf012.apiclinica.repository.ConsultaRepository;
 import inf012.apiclinica.repository.PacienteRepository;
 import inf012.apiclinica.repository.MedicoRepository;
+import inf012.apiclinica.model.MotivoCancelamento;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -40,8 +41,10 @@ public class ConsultaService {
     public Consulta agendar(ConsultaCreateDTO dto) {
 
         LocalDateTime dataHora = dto.getDataHora();
+        ZoneId zone = ZoneId.of("America/Sao_Paulo");
+        LocalDateTime agora = LocalDateTime.now(zone);
 
-        if (dataHora.isBefore(LocalDateTime.now().plusMinutes(30))) {
+        if (dataHora.isBefore(agora.plusMinutes(30))) {
             throw new RuntimeException("Consulta deve ser agendada com 30 minutos de antecedência");
         }
 
@@ -64,8 +67,8 @@ public class ConsultaService {
         LocalDateTime inicioDia = dataHora.toLocalDate().atStartOfDay();
         LocalDateTime fimDia = inicioDia.plusDays(1);
 
-        if (consultaRepository.existsByPacienteIdAndDataHoraBetween(
-                paciente.getId(), inicioDia, fimDia)) {
+        if (consultaRepository.existsByPacienteIdAndDataHoraBetweenAndCanceladaEmIsNull(
+            paciente.getId(), inicioDia, fimDia)) {
             throw new RuntimeException("Paciente já possui consulta neste dia");
         }
 
@@ -80,16 +83,19 @@ public class ConsultaService {
                 throw new RuntimeException("Médico inativo");
             }
 
-            if (consultaRepository.existsByMedicoIdAndDataHora(
+                if (consultaRepository.existsByMedicoIdAndDataHoraAndCanceladaEmIsNull(
                     medico.getId(), dataHora)) {
                 throw new RuntimeException("Médico já possui consulta neste horário");
             }
 
         } else {
+            if (dto.getEspecialidade() == null) {
+                throw new RuntimeException("Especialidade é obrigatória quando não há médico selecionado");
+            }
 
-            List<Medico> medicos = medicoRepository.findAllByAtivoTrue();
+            List<Medico> medicos = medicoRepository.findAllByAtivoTrueAndEspecialidade(dto.getEspecialidade());
             medicos.removeIf(m ->
-                    consultaRepository.existsByMedicoIdAndDataHora(m.getId(), dataHora)
+                    consultaRepository.existsByMedicoIdAndDataHoraAndCanceladaEmIsNull(m.getId(), dataHora)
             );
 
             if (medicos.isEmpty()) {
@@ -113,7 +119,9 @@ public class ConsultaService {
         Consulta consulta = consultaRepository.findById(consultaId)
                 .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
 
-        if (consulta.getDataHora().isBefore(LocalDateTime.now().plusHours(24))) {
+        ZoneId zone = ZoneId.of("America/Sao_Paulo");
+        LocalDateTime agora = LocalDateTime.now(zone);
+        if (consulta.getDataHora().isBefore(agora.plusHours(24))) {
             throw new RuntimeException("Consulta só pode ser cancelada com 24h de antecedência");
         }
 
@@ -137,6 +145,22 @@ public class ConsultaService {
         return consultaRepository.findByPacienteId(paciente.getId(), pageable);
     }
 
+    @Transactional
+    public void cancelarTodasConsultasDoMedico(String nomeUsuario) {
+        Medico medico = medicoRepository.findByNomeUsuario(nomeUsuario);
+        if (medico == null) {
+            throw new RuntimeException("Médico não encontrado");
+        }
+        ZoneId zone = ZoneId.of("America/Sao_Paulo");
+        LocalDateTime agora = LocalDateTime.now(zone);
+        List<Consulta> abertas = consultaRepository.findByMedicoIdAndCanceladaEmIsNull(medico.getId());
+        for (Consulta c : abertas) {
+            c.setMotivoCancelamento(MotivoCancelamento.MEDICO_INATIVO);
+            c.setCanceladaEm(agora);
+        }
+        consultaRepository.saveAll(abertas);
+    }
+
     public List<DisponibilidadeMedicoDTO> listarDisponibilidade( inf012.apiclinica.model.Especialidade especialidade, LocalDate dia) {
         LocalDate diaEfetivo = (dia == null) ? LocalDate.now() : dia;
 
@@ -148,7 +172,8 @@ public class ConsultaService {
         LocalDateTime inicio = diaEfetivo.atStartOfDay();
         LocalDateTime fim = inicio.plusDays(1);
 
-        LocalDateTime limite = LocalDateTime.now().plusMinutes(30);
+        ZoneId zone = ZoneId.of("America/Sao_Paulo");
+        LocalDateTime limite = LocalDateTime.now(zone).plusMinutes(30);
 
         return medicos.stream().map(m -> {
             List<Consulta> consultas = consultaRepository.findByMedicoIdAndDataHoraBetween(m.getId(), inicio, fim);

@@ -5,22 +5,28 @@ import inf012.apiclinica.service.MedicoService;
 import inf012.apiclinica.dto.MedicoCreateDTO;
 import inf012.apiclinica.dto.MedicoListDTO;
 import inf012.apiclinica.dto.MedicoUpdateDTO;
+import inf012.apiclinica.dto.MedicoSettingsDTO;
+import inf012.apiclinica.security.JwtTokenProvider;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 @RequestMapping("/api/medicos")
 public class MedicoController {
 
     private final MedicoService service;
+    private final JwtTokenProvider tokenProvider;
 
-    public MedicoController(MedicoService service) {
+    public MedicoController(MedicoService service, JwtTokenProvider tokenProvider) {
         this.service = service;
+        this.tokenProvider = tokenProvider;
     }
 
     @PostMapping
@@ -40,12 +46,51 @@ public class MedicoController {
         return service.listar(pageable);
     }
 
+    @GetMapping("/me")
+    public Medico me(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        String nomeUsuario = getNomeUsuario(authHeader);
+        return service.buscarPorNomeUsuario(nomeUsuario);
+    }
+
+    @GetMapping("/ativos/count")
+    public long contarAtivos() {
+        return service.contarAtivos();
+    }
+
     @PutMapping("/{id}")
     public Medico atualizar(
             @PathVariable Long id,
             @RequestBody @Valid MedicoUpdateDTO dto
     ) {
         return service.atualizar(id, dto);
+    }
+
+    @PutMapping("/me")
+    public Medico atualizarMe(@RequestBody @Valid MedicoSettingsDTO dto,
+                              @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        String nomeUsuario = getNomeUsuario(authHeader);
+        return service.atualizarConfiguracoes(nomeUsuario, dto);
+    }
+
+    @DeleteMapping("/me")
+    public void inativarMe(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        String nomeUsuario = getNomeUsuario(authHeader);
+        service.inativarPorNomeUsuario(nomeUsuario);
+    }
+
+    private String getNomeUsuario(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token ausente");
+        }
+        String token = authHeader.substring(7);
+        if (!tokenProvider.validateToken(token)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido");
+        }
+        String nomeUsuario = tokenProvider.getUsernameFromToken(token);
+        if (nomeUsuario == null || nomeUsuario.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido");
+        }
+        return nomeUsuario;
     }
 
     @DeleteMapping("/{id}")

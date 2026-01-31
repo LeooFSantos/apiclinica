@@ -6,6 +6,7 @@ import inf012.apiclinica.repository.PacienteRepository;
 import inf012.apiclinica.dto.PacienteCreateDTO;
 import inf012.apiclinica.dto.PacienteUpdateDTO;
 import inf012.apiclinica.dto.PacienteListDTO;
+import inf012.apiclinica.dto.PacienteSettingsDTO;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
@@ -87,6 +88,60 @@ public class PacienteService {
             throw new RuntimeException("Paciente não encontrado");
         }
         return paciente;
+    }
+
+    @Transactional
+    public Paciente atualizarConfiguracoes(String nomeUsuario, PacienteSettingsDTO dto) {
+        Paciente paciente = repository.findByNomeUsuario(nomeUsuario);
+        if (paciente == null) {
+            throw new RuntimeException("Paciente não encontrado");
+        }
+
+        if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
+            if (repository.existsByEmailAndIdNot(dto.getEmail(), paciente.getId())) {
+                throw new RuntimeException("E-mail já cadastrado");
+            }
+            paciente.setEmail(dto.getEmail());
+        }
+
+        if (dto.getTelefone() != null && !dto.getTelefone().isBlank()) {
+            paciente.setTelefone(dto.getTelefone());
+        }
+
+        if (dto.getSenha() != null && !dto.getSenha().isBlank()) {
+            paciente.setSenha(passwordEncoder.encode(dto.getSenha()));
+            if (userDetailsManager.userExists(paciente.getNomeUsuario())) {
+                userDetailsManager.updateUser(User.withUsername(paciente.getNomeUsuario())
+                        .password(paciente.getSenha())
+                        .roles("USER")
+                        .build());
+            }
+        }
+
+        Endereco endereco = paciente.getEndereco();
+        if (endereco == null) {
+            endereco = new Endereco();
+            paciente.setEndereco(endereco);
+        }
+
+        if (dto.getLogradouro() != null && !dto.getLogradouro().isBlank()) endereco.setLogradouro(dto.getLogradouro());
+        if (dto.getNumero() != null) endereco.setNumero(dto.getNumero());
+        if (dto.getComplemento() != null) endereco.setComplemento(dto.getComplemento());
+        if (dto.getBairro() != null && !dto.getBairro().isBlank()) endereco.setBairro(dto.getBairro());
+        if (dto.getCidade() != null && !dto.getCidade().isBlank()) endereco.setCidade(dto.getCidade());
+        if (dto.getUf() != null && !dto.getUf().isBlank()) endereco.setUf(dto.getUf());
+        if (dto.getCep() != null && !dto.getCep().isBlank()) endereco.setCep(dto.getCep());
+
+        return repository.save(paciente);
+    }
+
+    @Transactional
+    public void inativarPorNomeUsuario(String nomeUsuario) {
+        Paciente paciente = repository.findByNomeUsuario(nomeUsuario);
+        if (paciente == null) {
+            throw new RuntimeException("Paciente não encontrado");
+        }
+        paciente.setAtivo(false);
     }
 
     @Transactional

@@ -6,10 +6,13 @@ export const API_ENDPOINTS = {
   REFRESH: `${API_BASE_URL}/auth/refresh`,
   ME: `${API_BASE_URL}/auth/me`,
   PACIENTE_ME: `${API_BASE_URL}/pacientes/me`,
+  MEDICO_ME: `${API_BASE_URL}/medicos/me`,
   PACIENTES: `${API_BASE_URL}/pacientes`,
   MEDICOS: `${API_BASE_URL}/medicos`,
+  MEDICOS_ATIVOS_COUNT: `${API_BASE_URL}/medicos/ativos/count`,
   CONSULTAS: `${API_BASE_URL}/consultas`,
   CONSULTAS_DISPONIBILIDADE: `${API_BASE_URL}/consultas/disponibilidade`,
+  CONSULTAS_MEDICO_CANCELAR_TODAS: `${API_BASE_URL}/consultas/medico/cancelar-todas`,
   MEDICOS_REQUESTS: `${API_BASE_URL}/medicos/requests`,
 };
 
