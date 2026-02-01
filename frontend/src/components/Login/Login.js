@@ -114,7 +114,6 @@ export default function Login() {
         <div className="login-footer">
           <p>Credenciais de teste:</p>
           <code>admin / admin123</code>
-          <code>paciente1 / pac1</code>
         </div>
       </div>
 
