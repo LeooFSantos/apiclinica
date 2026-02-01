@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_ENDPOINTS, getAuthToken, getAuthUser, clearAuth } from '../../config';
+import { API_ENDPOINTS, authFetch, getAuthUser, clearAuth } from '../../config';
 import './Navbar.css';
 
 export default function Navbar() {
@@ -37,9 +37,8 @@ export default function Navbar() {
     try {
       setErro('');
       setMensagem('');
-      const token = getAuthToken();
       const endpoint = userType === 'MEDICO' ? API_ENDPOINTS.MEDICO_ME : API_ENDPOINTS.PACIENTE_ME;
-      const resp = await fetch(endpoint, { headers: { 'Authorization': `Bearer ${token}` } });
+      const resp = await authFetch(endpoint);
       if (!resp.ok) {
         const text = await resp.text();
         throw new Error(text || 'Erro ao carregar perfil');
@@ -77,13 +76,11 @@ export default function Navbar() {
       setErro('');
       setMensagem('');
       setCarregando(true);
-      const token = getAuthToken();
       const endpoint = userType === 'MEDICO' ? API_ENDPOINTS.MEDICO_ME : API_ENDPOINTS.PACIENTE_ME;
-      const resp = await fetch(endpoint, {
+      const resp = await authFetch(endpoint, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(form),
       });
@@ -103,21 +100,18 @@ export default function Navbar() {
     try {
       setErro('');
       setCarregando(true);
-      const token = getAuthToken();
       const endpoint = userType === 'MEDICO' ? API_ENDPOINTS.MEDICO_ME : API_ENDPOINTS.PACIENTE_ME;
       if (userType === 'MEDICO') {
-        const cancelarResp = await fetch(API_ENDPOINTS.CONSULTAS_MEDICO_CANCELAR_TODAS, {
+        const cancelarResp = await authFetch(API_ENDPOINTS.CONSULTAS_MEDICO_CANCELAR_TODAS, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
         });
         if (!cancelarResp.ok) {
           const text = await cancelarResp.text();
           throw new Error(text || 'Erro ao cancelar consultas do médico');
         }
       }
-      const resp = await fetch(endpoint, {
+      const resp = await authFetch(endpoint, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
       });
       if (!resp.ok) {
         const text = await resp.text();

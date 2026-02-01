@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { API_ENDPOINTS, getAuthToken } from '../../config';
+import { API_ENDPOINTS, authFetch } from '../../config';
 import './MedicoDashboard.css';
 
 export default function MedicoDashboard() {
@@ -21,12 +21,9 @@ export default function MedicoDashboard() {
   const carregarConsultas = async (date) => {
     setCarregando(true);
     try {
-      const token = getAuthToken();
       // endpoint criado no backend: GET /api/consultas/me?date=YYYY-MM-DD
       const url = `${API_ENDPOINTS.CONSULTAS}/me?date=${date}`;
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const response = await authFetch(url);
 
       if (response.ok) {
         const data = await response.json();
@@ -78,12 +75,10 @@ export default function MedicoDashboard() {
     if (!consultaCancelamento) return;
     try {
       setCancelando(true);
-      const token = getAuthToken();
-      const response = await fetch(`${API_ENDPOINTS.CONSULTAS}/${consultaCancelamento.id}`, {
+      const response = await authFetch(`${API_ENDPOINTS.CONSULTAS}/${consultaCancelamento.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ motivo: motivoCancelamento }),
       });

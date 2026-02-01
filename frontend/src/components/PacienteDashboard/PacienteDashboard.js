@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { API_ENDPOINTS, getAuthToken } from '../../config';
+import { API_ENDPOINTS, authFetch } from '../../config';
 import './PacienteDashboard.css';
 
 export default function PacienteDashboard() {
@@ -29,12 +29,7 @@ export default function PacienteDashboard() {
 
   const carregarDados = async () => {
     try {
-      const token = getAuthToken();
-
-      const responsePaciente = await fetch(
-        API_ENDPOINTS.PACIENTE_ME,
-        { headers: { 'Authorization': `Bearer ${token}` } }
-      );
+      const responsePaciente = await authFetch(API_ENDPOINTS.PACIENTE_ME);
 
       if (responsePaciente.ok) {
         const dataPaciente = await responsePaciente.json();
@@ -46,11 +41,8 @@ export default function PacienteDashboard() {
       }
 
       // Carregar consultas do paciente
-      const responseConsultas = await fetch(
-        `${API_ENDPOINTS.CONSULTAS}?page=0&size=10`,
-        {
-          headers: { 'Authorization': `Bearer ${token}` },
-        }
+      const responseConsultas = await authFetch(
+        `${API_ENDPOINTS.CONSULTAS}?page=0&size=10`
       );
 
       if (responseConsultas.ok) {
@@ -59,9 +51,7 @@ export default function PacienteDashboard() {
         setConsultas(list);
       }
 
-      const responseMedicos = await fetch(API_ENDPOINTS.MEDICOS_ATIVOS_COUNT, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const responseMedicos = await authFetch(API_ENDPOINTS.MEDICOS_ATIVOS_COUNT);
 
       if (responseMedicos.ok) {
         const count = await responseMedicos.json();
@@ -98,7 +88,6 @@ export default function PacienteDashboard() {
 
   const carregarDisponibilidade = async () => {
     try {
-      const token = getAuthToken();
       setMensagem('');
       setErroAgendamento('');
 
@@ -110,9 +99,8 @@ export default function PacienteDashboard() {
         setErroAgendamento('Domingo não há atendimento. Escolha outra data.');
         return;
       }
-      const response = await fetch(
-        `${API_ENDPOINTS.CONSULTAS_DISPONIBILIDADE}?date=${dataConsulta}&especialidade=${especialidade}`,
-        { headers: { 'Authorization': `Bearer ${token}` } }
+      const response = await authFetch(
+        `${API_ENDPOINTS.CONSULTAS_DISPONIBILIDADE}?date=${dataConsulta}&especialidade=${especialidade}`
       );
 
       if (response.ok) {
@@ -152,12 +140,10 @@ export default function PacienteDashboard() {
         dataHora,
       };
 
-      const token = getAuthToken();
-      const response = await fetch(API_ENDPOINTS.CONSULTAS, {
+      const response = await authFetch(API_ENDPOINTS.CONSULTAS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
       });
@@ -199,12 +185,10 @@ export default function PacienteDashboard() {
     if (!consultaCancelamento) return;
     try {
       setCancelando(true);
-      const token = getAuthToken();
-      const response = await fetch(`${API_ENDPOINTS.CONSULTAS}/${consultaCancelamento.id}`, {
+      const response = await authFetch(`${API_ENDPOINTS.CONSULTAS}/${consultaCancelamento.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ motivo: motivoCancelamento }),
       });

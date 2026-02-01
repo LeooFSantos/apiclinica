@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { API_ENDPOINTS, getAuthToken } from '../../config';
+import { API_ENDPOINTS, authFetch } from '../../config';
 import './AdminDashboard.css';
 
 export default function AdminDashboard() {
@@ -15,10 +15,7 @@ export default function AdminDashboard() {
 
   const carregarSolicitacoes = async () => {
     try {
-      const token = getAuthToken();
-      const response = await fetch(API_ENDPOINTS.MEDICOS_REQUESTS, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const response = await authFetch(API_ENDPOINTS.MEDICOS_REQUESTS);
 
       if (!response.ok) throw new Error('Erro ao carregar solicitações');
 
@@ -33,12 +30,10 @@ export default function AdminDashboard() {
 
   const aprovarSolicitacao = async (id) => {
     try {
-      const token = getAuthToken();
-      const response = await fetch(
+      const response = await authFetch(
         `${API_ENDPOINTS.MEDICOS_REQUESTS}/${id}/approve`,
         {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
         }
       );
 
@@ -57,12 +52,10 @@ export default function AdminDashboard() {
 
   const rejeitarSolicitacao = async (id) => {
     try {
-      const token = getAuthToken();
-      const response = await fetch(
+      const response = await authFetch(
         `${API_ENDPOINTS.MEDICOS_REQUESTS}/${id}/reject`,
         {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
         }
       );
 

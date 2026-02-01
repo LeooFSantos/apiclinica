@@ -29,6 +29,17 @@ export const getAuthToken = () => {
   return localStorage.getItem(AUTH_TOKEN_KEY);
 };
 
+export const buildAuthHeaders = (headers = {}) => {
+  const token = getAuthToken();
+  if (!token) return { ...headers };
+  return { ...headers, Authorization: `Bearer ${token}` };
+};
+
+export const authFetch = (url, options = {}) => {
+  const mergedHeaders = buildAuthHeaders(options.headers || {});
+  return fetch(url, { ...options, headers: mergedHeaders });
+};
+
 export const getAuthUser = () => {
   const user = localStorage.getItem(AUTH_USER_KEY);
   return user ? JSON.parse(user) : null;
