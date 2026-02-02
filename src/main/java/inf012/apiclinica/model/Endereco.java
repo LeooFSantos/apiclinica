@@ -1,16 +1,36 @@
 package inf012.apiclinica.model;
 
 import jakarta.persistence.Embeddable;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 @Embeddable
 public class Endereco {
 
+    @NotBlank
+    @Size(min = 2, max = 120)
     private String logradouro;
+
+    @Pattern(regexp = "\\d{0,10}")
     private String numero;
+
     private String complemento;
+
+    @NotBlank
+    @Size(min = 2, max = 80)
     private String bairro;
+
+    @NotBlank
+    @Size(min = 2, max = 80)
     private String cidade;
+
+    @NotBlank
+    @Pattern(regexp = "[A-Za-z]{2}")
     private String uf;
+
+    @NotBlank
+    @Pattern(regexp = "\\d{8}")
     private String cep;
 
     public String getLogradouro() { return logradouro; }

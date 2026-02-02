@@ -54,26 +54,26 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors().configurationSource(corsConfigurationSource()).and()
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/medicos/requests", "/api/medicos/requests/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/pacientes", "/api/pacientes/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/consultas/medico/cancelar-todas").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/consultas", "/api/consultas/**").hasAnyRole("USER","MEDICO","ADMIN")
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/pacientes/me", "/api/pacientes/me/**").authenticated()
-                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/pacientes/me", "/api/pacientes/me/**").authenticated()
-                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/pacientes/me", "/api/pacientes/me/**").authenticated()
-                .requestMatchers("/api/medicos/requests/**").hasRole("ADMIN")
-                .requestMatchers("/api/medicos/**").hasAnyRole("MEDICO","ADMIN")
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                .anyRequest().authenticated()
-            )
-            .formLogin(form -> form.disable())
-            .httpBasic(basic -> basic.disable());
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                                .requestMatchers("/api/auth/**").permitAll()
+                                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/medicos/requests", "/api/medicos/requests/**").permitAll()
+                                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/pacientes", "/api/pacientes/**").permitAll()
+                                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/consultas/medico/cancelar-todas").permitAll()
+                                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/consultas", "/api/consultas/**").hasAnyRole("USER", "MEDICO", "ADMIN")
+                                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/pacientes/me", "/api/pacientes/me/**").authenticated()
+                                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/pacientes/me", "/api/pacientes/me/**").authenticated()
+                                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/pacientes/me", "/api/pacientes/me/**").authenticated()
+                                .requestMatchers("/api/medicos/requests/**").hasRole("ADMIN")
+                                .requestMatchers("/api/medicos/**").hasAnyRole("MEDICO", "ADMIN")
+                                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                                .anyRequest().authenticated()
+                )
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable());
 
         if (jwtTokenFilter != null) {
             http.addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);

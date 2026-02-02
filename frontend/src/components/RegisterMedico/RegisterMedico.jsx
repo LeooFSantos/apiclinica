@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { API_ENDPOINTS } from '../../config';
-import './RegisterPaciente.css';
+import './RegisterMedico.css';
 
-export default function RegisterPaciente() {
+export default function RegisterMedico() {
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
     telefone: '',
-    cpf: '',
+    crm: '',
+    crmUf: '',
+    especialidade: 'CARDIOLOGIA',
     nomeUsuario: '',
     senha: '',
     logradouro: '',
@@ -19,16 +21,28 @@ export default function RegisterPaciente() {
     uf: '',
     cep: '',
   });
+
+  const [carregando, setCarregando] = useState(false);
+  const [erro, setErro] = useState('');
+  const [sucesso, setSucesso] = useState(false);
+  const navigate = useNavigate();
+
+  const especialidades = [
+    'CARDIOLOGIA',
+    'DERMATOLOGIA',
+    'OFTALMOLOGIA',
+    'ORTOPEDIA',
+    'PNEUMOLOGIA',
+    'GASTROENTEROLOGIA',
+    'GINECOLOGIA',
+  ];
+
   const ufs = [
     'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'
   ];
 
-  const [carregando, setCarregando] = useState(false);
-  const [erro, setErro] = useState('');
-  const navigate = useNavigate();
-
   const sanitizeValue = (name, value) => {
-    if (['cpf', 'cep', 'telefone', 'numero'].includes(name)) {
+    if (['cep', 'telefone', 'numero', 'crm'].includes(name)) {
       return value.replace(/\D/g, '');
     }
     if (name === 'uf') {
@@ -52,18 +66,39 @@ export default function RegisterPaciente() {
     setCarregando(true);
 
     try {
-      const response = await fetch(`${API_ENDPOINTS.PACIENTES}`, {
+      const payload = {
+        nome: formData.nome,
+        email: formData.email,
+        telefone: formData.telefone,
+        crm: formData.crm,
+        crmUf: formData.crmUf,
+        especialidade: formData.especialidade,
+        nomeUsuario: formData.nomeUsuario,
+        senha: formData.senha,
+        endereco: {
+          logradouro: formData.logradouro,
+          numero: formData.numero,
+          complemento: formData.complemento,
+          bairro: formData.bairro,
+          cidade: formData.cidade,
+          uf: formData.uf,
+          cep: formData.cep,
+        },
+      };
+
+      const response = await fetch(`${API_ENDPOINTS.MEDICOS_REQUESTS}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const text = await response.text();
-        throw new Error(text || 'Erro ao registrar paciente');
+        throw new Error(text || 'Erro ao enviar solicitação');
       }
 
-      navigate('/?registered=true');
+      setSucesso(true);
+      setTimeout(() => navigate('/'), 3000);
     } catch (err) {
       setErro(err.message);
     } finally {
@@ -71,10 +106,24 @@ export default function RegisterPaciente() {
     }
   };
 
+  if (sucesso) {
+    return (
+      <div className="register-container">
+        <div className="register-card">
+          <div className="success-message">
+            <h2>✓ Solicitação Enviada!</h2>
+            <p>Sua solicitação foi recebida e está aguardando aprovação do administrador.</p>
+            <p>Você será notificado quando sua conta for aprovada.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="register-container">
       <div className="register-card">
-        <h1>Registrar como Paciente</h1>
+        <h1>Registrar como Médico</h1>
 
         {erro && <div className="alert alert-error">{erro}</div>}
 
@@ -109,38 +158,67 @@ export default function RegisterPaciente() {
 
           <div className="form-row">
             <div className="form-group">
-              <label>CPF</label>
+              <label>CRM</label>
               <input
                 type="text"
-                name="cpf"
-                value={formData.cpf}
+                name="crm"
+                value={formData.crm}
                 onChange={handleChange}
-                placeholder="000.000.000-00"
                 inputMode="numeric"
-                pattern="\d{11}"
-                maxLength="11"
-                title="Digite 11 números"
+                maxLength="20"
+                pattern="\d{3,20}"
+                title="Digite de 3 a 20 números"
                 required
                 disabled={carregando}
               />
             </div>
 
             <div className="form-group">
-              <label>Telefone</label>
-              <input
-                type="tel"
-                name="telefone"
-                value={formData.telefone}
+              <label>UF do CRM</label>
+              <select
+                name="crmUf"
+                value={formData.crmUf}
                 onChange={handleChange}
-                placeholder="(11) 99999-9999"
+                required
+                disabled={carregando}
+              >
+                <option value="">Selecione</option>
+                {ufs.map(uf => (
+                  <option key={uf} value={uf}>{uf}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Especialidade</label>
+              <select
+                name="especialidade"
+                value={formData.especialidade}
+                onChange={handleChange}
+                disabled={carregando}
+              >
+                {especialidades.map(esp => (
+                  <option key={esp} value={esp}>{esp}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>Telefone</label>
+            <input
+              type="tel"
+              name="telefone"
+              value={formData.telefone}
+              onChange={handleChange}
+              placeholder="(11) 99999-9999"
                 inputMode="numeric"
                 pattern="\d{10,11}"
                 maxLength="11"
                 title="Digite 10 ou 11 números"
-                required
-                disabled={carregando}
-              />
-            </div>
+              required
+              disabled={carregando}
+            />
           </div>
 
           <hr className="divider" />
@@ -285,7 +363,7 @@ export default function RegisterPaciente() {
             className="btn btn-primary btn-full"
             disabled={carregando}
           >
-            {carregando ? <span className="spinner"></span> : 'Registrar'}
+            {carregando ? <span className="spinner"></span> : 'Enviar Solicitação'}
           </button>
         </form>
 

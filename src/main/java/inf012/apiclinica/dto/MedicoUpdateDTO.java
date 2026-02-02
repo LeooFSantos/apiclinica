@@ -1,20 +1,21 @@
 package inf012.apiclinica.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class MedicoUpdateDTO {
 
-    @NotBlank
-    @Size(min = 2, max = 100)
-    private String nome;
+    @Email
+    @Size(max = 120)
+    private String email;
 
-    @NotBlank
     @Pattern(regexp = "\\d{10,11}")
     private String telefone;
 
-    @NotBlank
+    @Size(min = 6, max = 60)
+    private String senha;
+
     @Size(min = 2, max = 120)
     private String logradouro;
 
@@ -22,27 +23,26 @@ public class MedicoUpdateDTO {
     private String numero;
     private String complemento;
 
-    @NotBlank
     @Size(min = 2, max = 80)
     private String bairro;
 
-    @NotBlank
     @Size(min = 2, max = 80)
     private String cidade;
 
-    @NotBlank
     @Pattern(regexp = "[A-Za-z]{2}")
     private String uf;
 
-    @NotBlank
     @Pattern(regexp = "\\d{8}")
     private String cep;
 
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
     public String getTelefone() { return telefone; }
     public void setTelefone(String telefone) { this.telefone = telefone; }
+
+    public String getSenha() { return senha; }
+    public void setSenha(String senha) { this.senha = senha; }
 
     public String getLogradouro() { return logradouro; }
     public void setLogradouro(String logradouro) { this.logradouro = logradouro; }

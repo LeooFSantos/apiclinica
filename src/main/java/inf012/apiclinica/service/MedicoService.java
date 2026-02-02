@@ -3,7 +3,6 @@ package inf012.apiclinica.service;
 import inf012.apiclinica.dto.MedicoCreateDTO;
 import inf012.apiclinica.dto.MedicoListDTO;
 import inf012.apiclinica.dto.MedicoUpdateDTO;
-import inf012.apiclinica.dto.MedicoSettingsDTO;
 import inf012.apiclinica.repository.MedicoRepository;
 import inf012.apiclinica.repository.ConsultaRepository;
 import inf012.apiclinica.model.Medico;
@@ -40,14 +39,7 @@ public class MedicoService {
             throw new RuntimeException("Nome de usuário já cadastrado");
         }
 
-        Endereco endereco = new Endereco();
-        endereco.setLogradouro(dto.getLogradouro());
-        endereco.setNumero(dto.getNumero());
-        endereco.setComplemento(dto.getComplemento());
-        endereco.setBairro(dto.getBairro());
-        endereco.setCidade(dto.getCidade());
-        endereco.setUf(dto.getUf());
-        endereco.setCep(dto.getCep());
+        Endereco endereco = dto.getEndereco();
 
         Medico medico = new Medico();
         medico.setNome(dto.getNome());
@@ -86,28 +78,7 @@ public class MedicoService {
     }
 
     @Transactional
-    public Medico atualizar(Long id, MedicoUpdateDTO dto) {
-
-        Medico medico = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Médico não encontrado"));
-
-        medico.setNome(dto.getNome());
-        medico.setTelefone(dto.getTelefone());
-
-        Endereco endereco = medico.getEndereco();
-        endereco.setLogradouro(dto.getLogradouro());
-        endereco.setNumero(dto.getNumero());
-        endereco.setComplemento(dto.getComplemento());
-        endereco.setBairro(dto.getBairro());
-        endereco.setCidade(dto.getCidade());
-        endereco.setUf(dto.getUf());
-        endereco.setCep(dto.getCep());
-
-        return repository.save(medico);
-    }
-
-    @Transactional
-    public Medico atualizarConfiguracoes(String nomeUsuario, MedicoSettingsDTO dto) {
+    public Medico atualizarConfiguracoes(String nomeUsuario, MedicoUpdateDTO dto) {
         Medico medico = repository.findByNomeUsuario(nomeUsuario);
         if (medico == null) {
             throw new RuntimeException("Médico não encontrado");

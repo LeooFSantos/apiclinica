@@ -5,7 +5,6 @@ import inf012.apiclinica.service.MedicoService;
 import inf012.apiclinica.dto.MedicoCreateDTO;
 import inf012.apiclinica.dto.MedicoListDTO;
 import inf012.apiclinica.dto.MedicoUpdateDTO;
-import inf012.apiclinica.dto.MedicoSettingsDTO;
 import inf012.apiclinica.security.JwtTokenProvider;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
@@ -57,16 +56,8 @@ public class MedicoController {
         return service.contarAtivos();
     }
 
-    @PutMapping("/{id}")
-    public Medico atualizar(
-            @PathVariable Long id,
-            @RequestBody @Valid MedicoUpdateDTO dto
-    ) {
-        return service.atualizar(id, dto);
-    }
-
     @PutMapping("/me")
-    public Medico atualizarMe(@RequestBody @Valid MedicoSettingsDTO dto,
+    public Medico atualizarMe(@RequestBody @Valid MedicoUpdateDTO dto,
                               @RequestHeader(value = "Authorization", required = false) String authHeader) {
         String nomeUsuario = getNomeUsuario(authHeader);
         return service.atualizarConfiguracoes(nomeUsuario, dto);

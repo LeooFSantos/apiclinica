@@ -41,7 +41,11 @@ Sistema completo de gestão de clínica com backend Spring Boot e frontend React
 ## Executando com Docker
 1. Subir banco e backend:
    - `docker compose up -d --build`
-2. Acesse a API em: `http://localhost:8080`
+2. Subir o frontend:
+   - `cd frontend`
+   - `npm install`
+   - `npm start`
+3. Acesse a API em: `http://localhost:8080`
 
 > Se precisar resetar o banco:
 > `docker compose down -v`

@@ -2,6 +2,7 @@ package inf012.apiclinica.controller;
 
 import inf012.apiclinica.dto.MedicoCreateDTO;
 import inf012.apiclinica.model.Medico;
+import inf012.apiclinica.model.Endereco;
 import inf012.apiclinica.model.MedicoRequest;
 import inf012.apiclinica.repository.MedicoRequestRepository;
 import inf012.apiclinica.repository.MedicoRepository;
@@ -43,13 +44,7 @@ public class MedicoRegistrationController {
         req.setCrm(dto.getCrm());
         req.setCrmUf(dto.getCrmUf());
         req.setEspecialidade(dto.getEspecialidade());
-        req.setLogradouro(dto.getLogradouro());
-        req.setNumero(dto.getNumero());
-        req.setComplemento(dto.getComplemento());
-        req.setBairro(dto.getBairro());
-        req.setCidade(dto.getCidade());
-        req.setUf(dto.getUf());
-        req.setCep(dto.getCep());
+        req.setEndereco(dto.getEndereco());
         req.setNomeUsuario(dto.getNomeUsuario());
         req.setSenha(passwordEncoder.encode(dto.getSenha()));
         MedicoRequest saved = requestRepository.save(req);
@@ -81,16 +76,7 @@ public class MedicoRegistrationController {
         m.setEspecialidade(req.getEspecialidade());
         m.setNomeUsuario(req.getNomeUsuario());
         m.setSenha(req.getSenha());
-        // montar endereco
-        inf012.apiclinica.model.Endereco end = new inf012.apiclinica.model.Endereco();
-        end.setLogradouro(req.getLogradouro());
-        end.setNumero(req.getNumero());
-        end.setComplemento(req.getComplemento());
-        end.setBairro(req.getBairro());
-        end.setCidade(req.getCidade());
-        end.setUf(req.getUf());
-        end.setCep(req.getCep());
-        m.setEndereco(end);
+        m.setEndereco(req.getEndereco());
         Medico savedMed = medicoRepository.save(m);
 
         // criar conta de usuário com role MEDICO

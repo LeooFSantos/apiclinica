@@ -6,7 +6,6 @@ import inf012.apiclinica.repository.PacienteRepository;
 import inf012.apiclinica.dto.PacienteCreateDTO;
 import inf012.apiclinica.dto.PacienteUpdateDTO;
 import inf012.apiclinica.dto.PacienteListDTO;
-import inf012.apiclinica.dto.PacienteSettingsDTO;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
@@ -45,14 +44,7 @@ public class PacienteService {
             throw new RuntimeException("Nome de usuário já cadastrado");
         }
 
-        Endereco endereco = new Endereco();
-        endereco.setLogradouro(dto.getLogradouro());
-        endereco.setNumero(dto.getNumero());
-        endereco.setComplemento(dto.getComplemento());
-        endereco.setBairro(dto.getBairro());
-        endereco.setCidade(dto.getCidade());
-        endereco.setUf(dto.getUf());
-        endereco.setCep(dto.getCep());
+        Endereco endereco = dto.getEndereco();
 
         Paciente paciente = new Paciente();
         paciente.setNome(dto.getNome());
@@ -91,7 +83,7 @@ public class PacienteService {
     }
 
     @Transactional
-    public Paciente atualizarConfiguracoes(String nomeUsuario, PacienteSettingsDTO dto) {
+    public Paciente atualizarConfiguracoes(String nomeUsuario, PacienteUpdateDTO dto) {
         Paciente paciente = repository.findByNomeUsuario(nomeUsuario);
         if (paciente == null) {
             throw new RuntimeException("Paciente não encontrado");
@@ -142,27 +134,6 @@ public class PacienteService {
             throw new RuntimeException("Paciente não encontrado");
         }
         paciente.setAtivo(false);
-    }
-
-    @Transactional
-    public Paciente atualizar(Long id, PacienteUpdateDTO dto) {
-
-        Paciente paciente = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
-
-        paciente.setNome(dto.getNome());
-        paciente.setTelefone(dto.getTelefone());
-
-        Endereco endereco = paciente.getEndereco();
-        endereco.setLogradouro(dto.getLogradouro());
-        endereco.setNumero(dto.getNumero());
-        endereco.setComplemento(dto.getComplemento());
-        endereco.setBairro(dto.getBairro());
-        endereco.setCidade(dto.getCidade());
-        endereco.setUf(dto.getUf());
-        endereco.setCep(dto.getCep());
-
-        return repository.save(paciente);
     }
 
     @Transactional
