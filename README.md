@@ -44,7 +44,7 @@ Sistema completo de gestão de clínica com backend Spring Boot e frontend React
 2. Subir o frontend:
    - `cd frontend`
    - `npm install`
-   - `npm start`
+   - `npm run dev`
 3. Acesse a API em: `http://localhost:8080`
 
 > Se precisar resetar o banco:
@@ -57,7 +57,7 @@ Sistema completo de gestão de clínica com backend Spring Boot e frontend React
 3. Execute o frontend:
    - `cd frontend`
    - `npm install`
-   - `npm start`
+   - `npm run dev`
 4. Acesse o frontend em: `http://localhost:3000`
 
 ## Autenticação
