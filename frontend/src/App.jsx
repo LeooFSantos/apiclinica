@@ -1,10 +1,9 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './components/Login/Login';
-import Dashboard from './components/Dashboard/Dashboard';
-import RegisterPaciente from './components/RegisterPaciente/RegisterPaciente';
-import RegisterMedico from './components/RegisterMedico/RegisterMedico';
-import './index.css';
+import Login from './components/Login/Login.jsx';
+import Dashboard from './components/Dashboard/Dashboard.jsx';
+import RegisterPaciente from './components/RegisterPaciente/RegisterPaciente.jsx';
+import RegisterMedico from './components/RegisterMedico/RegisterMedico.jsx';
 
 function App() {
   return (
