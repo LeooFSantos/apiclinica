@@ -20,13 +20,16 @@ public class PacienteService {
     private final PacienteRepository repository;
     private final PasswordEncoder passwordEncoder;
     private final InMemoryUserDetailsManager userDetailsManager;
+    private final EmailNotificationService emailNotificationService;
 
     public PacienteService(PacienteRepository repository,
                            PasswordEncoder passwordEncoder,
-                           InMemoryUserDetailsManager userDetailsManager) {
+                           InMemoryUserDetailsManager userDetailsManager,
+                           EmailNotificationService emailNotificationService) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
         this.userDetailsManager = userDetailsManager;
+        this.emailNotificationService = emailNotificationService;
     }
 
     @Transactional
@@ -62,7 +65,9 @@ public class PacienteService {
                     .build());
         }
 
-        return repository.save(paciente);
+        Paciente saved = repository.save(paciente);
+        emailNotificationService.enviarBoasVindasPaciente(saved);
+        return saved;
     }
 
     public Page<PacienteListDTO> listar(Pageable pageable) {

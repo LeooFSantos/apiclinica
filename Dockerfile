@@ -1,8 +1,8 @@
 FROM node:18-alpine AS frontend-build
 WORKDIR /frontend
 
-ARG VITE_API_URL=http://localhost:8080/api
-ENV VITE_API_URL=$VITE_API_URL
+ARG REACT_APP_API_URL=http://localhost:8080/api
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
 COPY frontend/package*.json ./
 RUN npm install
@@ -17,7 +17,7 @@ COPY pom.xml .
 RUN mvn dependency:go-offline
 
 COPY src ./src
-COPY --from=frontend-build /frontend/dist ./src/main/resources/static
+COPY --from=frontend-build /frontend/build ./src/main/resources/static
 RUN mvn clean package -DskipTests
 
 FROM eclipse-temurin:21-jre

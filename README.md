@@ -1,105 +1,158 @@
-# API Clínica
+# API Clínica — Arquitetura de Microserviços
 
-Sistema completo de gestão de clínica com backend Spring Boot e frontend React, incluindo autenticação JWT, perfis de acesso e fluxo de aprovação de médicos.
+Sistema completo de gestão de clínica médica desenvolvido com arquitetura de microserviços, utilizando Spring Boot, Spring Cloud (Eureka), React, Docker e Swagger/OpenAPI.
 
-## Stack
-- **Backend:** Java 21, Spring Boot 3, Spring Security, JPA/Hibernate
-- **Frontend:** React 18 + React Router
-- **Banco:** PostgreSQL
-- **Infra:** Docker/Docker Compose
+O projeto implementa autenticação JWT, controle de acesso por perfis, fluxo de aprovação de médicos, agendamento de consultas e envio de notificações por e-mail através de um microserviço dedicado.
+
+---
+
+## Arquitetura Geral
+
+- Frontend (React) consome apenas a API principal
+- API Principal atua como Gateway
+- Eureka Server realiza registro e descoberta de serviços
+- Email Service é responsável exclusivamente pelo envio de e-mails
+- PostgreSQL é utilizado para persistência de dados
+- MailHog simula o envio de e-mails em ambiente de desenvolvimento
+
+Fluxo simplificado:
+
+Frontend  
+→ API Principal (Gateway)  
+→ Eureka (Service Discovery)  
+→ Email Service  
+→ MailHog (SMTP de desenvolvimento)
+
+---
+
+## Stack Tecnológica
+
+### Backend
+- Java 21
+- Spring Boot 3
+- Spring Security com JWT
+- Spring Data JPA (Hibernate)
+- Spring Cloud Netflix Eureka
+- Spring Cloud Gateway
+- SpringDoc OpenAPI (Swagger)
+
+### Frontend
+- React 18
+- React Router
+- Fetch API / Axios
+
+### Infraestrutura
+- Docker
+- Docker Compose
+- PostgreSQL
+- MailHog (SMTP de desenvolvimento)
+
+---
 
 ## Funcionalidades
-- Autenticação JWT e controle por roles (ADMIN, MEDICO, USER)
-- Cadastro e login de pacientes
-- Solicitação de cadastro de médicos + aprovação/rejeição pelo admin
-- Agendamento de consultas por especialidade e horários disponíveis
-- Cancelamento de consultas (paciente e médico) com motivos
-- Regras de negócio (antecedência, conflitos, horário de funcionamento)
-- Configurações de perfil (dados, senha, endereço) e inativação
 
-## Estrutura do projeto
+### Autenticação e Segurança
+- Autenticação via JWT
+- Controle de acesso por roles:
+  - ADMIN
+  - MEDICO
+  - USER (Paciente)
+
+### Gestão de Usuários
+- Cadastro e login de pacientes
+- Solicitação de cadastro de médicos
+- Aprovação e rejeição de médicos pelo administrador
+- Atualização de dados de perfil
+- Inativação de contas
+
+### Consultas Médicas
+- Agendamento de consultas por especialidade
+- Consulta de horários disponíveis
+- Cancelamento de consultas por paciente ou médico
+- Cancelamento em massa de consultas de um médico
+- Regras de negócio:
+  - Antecedência mínima para cancelamento
+  - Prevenção de conflitos de horário
+  - Respeito ao horário de funcionamento da clínica
+
+### Envio de E-mails (Microserviço)
+Os e-mails são enviados automaticamente nas seguintes situações:
+- Cadastro de paciente (mensagem de boas-vindas)
+- Agendamento de consulta
+- Cancelamento de consulta
+- Aprovação ou rejeição do cadastro de médico
+
+O envio é feito pela API principal, que localiza o Email Service dinamicamente através do Eureka.
+
+---
+
+## Estrutura do Projeto
+
 ```
 .
-├─ src/main/java/inf012/apiclinica
-│  ├─ controller
-│  ├─ dto
-│  ├─ model
-│  ├─ repository
-│  └─ service
-├─ src/main/resources
-│  └─ application.properties
+├─ apiclinica
+├─ email-service
+├─ eureka-server
 ├─ frontend
 ├─ docker-compose.yml
 ├─ Dockerfile
-└─ pom.xml
+└─ README.md
 ```
 
-## Requisitos
-- Docker e Docker Compose **ou**
-- Java 21 + Maven + PostgreSQL
+---
+
+## Serviços e Portas
+
+| Serviço | Porta | Descrição |
+|------|------|---------|
+| Frontend | 3000 | Interface do usuário |
+| API Principal (Gateway) | 8080 | Backend principal |
+| Email Service | 8082 | Microserviço de e-mails |
+| Eureka Server | 8761 | Registro e descoberta de serviços |
+| MailHog (Web UI) | 8025 | Visualização de e-mails |
+| MailHog (SMTP) | 1025 | SMTP de desenvolvimento |
+| PostgreSQL | 5432 | Banco de dados |
+
+---
 
 ## Executando com Docker
-1. Subir banco e backend:
-   - `docker compose up -d --build`
-2. Subir o frontend:
-   - `cd frontend`
-   - `npm install`
-   - `npm run dev`
-3. Acesse a API em: `http://localhost:8080`
 
-> Se precisar resetar o banco:
-> `docker compose down -v`
+```bash
+docker compose down -v --rmi local
+docker compose build --no-cache
+docker compose up
+```
 
-## Executando localmente (sem Docker)
-1. Configure o PostgreSQL e ajuste `src/main/resources/application.properties`.
-2. Execute o backend:
-   - `./mvnw spring-boot:run` (Windows: `mvnw.cmd`)
-3. Execute o frontend:
-   - `cd frontend`
-   - `npm install`
-   - `npm run dev`
-4. Acesse o frontend em: `http://localhost:3000`
+---
+
+## Executando o Front
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+---
+
+## Endereços Importantes
+
+- Frontend: http://localhost:3000
+- API Principal: http://localhost:8080
+- Swagger API Principal: http://localhost:8080/swagger-ui.html
+- Swagger Email Service: http://localhost:8082/swagger-ui/index.html
+- Eureka Server: http://localhost:8761
+- MailHog: http://localhost:8025
+
+---
 
 ## Autenticação
-- O login retorna um token JWT.
-- O frontend guarda o token e envia em `Authorization: Bearer <token>`.
 
-## Perfis (roles)
-- **ADMIN**: aprova/rejeita solicitações de médicos, acesso administrativo.
-- **MEDICO**: agenda pessoal, cancelamento de consultas, configurações.
-- **USER (PACIENTE)**: agendamento e cancelamento das próprias consultas.
+O login retorna um token JWT que deve ser enviado no header:
 
-## Endpoints principais
-### Auth
-- `POST /api/auth/login`
-- `GET /api/auth/me`
+Authorization: Bearer <token>
 
-### Pacientes
-- `POST /api/pacientes`
-- `GET /api/pacientes/me`
-- `PUT /api/pacientes/me`
-- `DELETE /api/pacientes/me`
+---
 
-### Médicos
-- `POST /api/medicos/requests`
-- `POST /api/medicos/requests/{id}/approve`
-- `POST /api/medicos/requests/{id}/reject`
-- `GET /api/medicos/me`
-- `PUT /api/medicos/me`
-- `DELETE /api/medicos/me`
 
-### Consultas
-- `POST /api/consultas`
-- `GET /api/consultas` (paciente)
-- `GET /api/consultas/me` (médico)
-- `GET /api/consultas/disponibilidade`
-- `DELETE /api/consultas/{id}`
-- `POST /api/consultas/medico/cancelar-todas`
-
-## Observações
-- Cancelamento exige antecedência mínima de 24h.
-- Consultas canceladas não bloqueiam novos agendamentos.
-- Médicos inativos têm consultas futuras canceladas automaticamente.
-
-## Licença
-Projeto acadêmico/educacional.
+Projeto acadêmico e educacional.

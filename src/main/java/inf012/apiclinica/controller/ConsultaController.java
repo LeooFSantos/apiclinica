@@ -16,8 +16,14 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 import java.time.LocalDate;
 import java.util.List;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+/**
+ * Endpoints de consultas (agendamento, cancelamento e disponibilidade).
+ */
 @RestController
+@Tag(name = "Consultas", description = "Agendamento, cancelamento e consulta de disponibilidade")
 @RequestMapping("/api/consultas")
 public class ConsultaController {
 
@@ -29,12 +35,14 @@ public class ConsultaController {
         this.authTokenService = authTokenService;
     }
 
+    @Operation(summary = "Agenda uma nova consulta")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Consulta agendar(@RequestBody @Valid ConsultaCreateDTO dto) {
         return service.agendar(dto);
     }
 
+    @Operation(summary = "Cancela uma consulta informando o motivo")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void cancelar(
@@ -44,12 +52,14 @@ public class ConsultaController {
         service.cancelar(id, dto);
     }
 
+    @Operation(summary = "Lista consultas do médico autenticado no dia")
     @GetMapping("/me")
     public List<Consulta> minhasConsultas(@RequestParam(required = false) String date, Authentication auth) {
         LocalDate dia = (date == null) ? LocalDate.now() : LocalDate.parse(date);
         return service.listarPorMedicoENoDia(auth.getName(), dia);
     }
 
+    @Operation(summary = "Lista consultas do paciente autenticado")
     @GetMapping
     public Page<Consulta> listarDoPaciente(
             Authentication auth,
@@ -58,6 +68,7 @@ public class ConsultaController {
         return service.listarPorPaciente(auth.getName(), pageable);
     }
 
+    @Operation(summary = "Cancela todas as consultas do médico autenticado")
     @PostMapping("/medico/cancelar-todas")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void cancelarTodasDoMedico(@RequestHeader(value = "Authorization", required = false) String authHeader) {
@@ -65,6 +76,7 @@ public class ConsultaController {
         service.cancelarTodasConsultasDoMedico(nomeUsuario);
     }
 
+    @Operation(summary = "Lista disponibilidade de médicos por especialidade e data")
     @GetMapping("/disponibilidade")
     public List<DisponibilidadeMedicoDTO> disponibilidade(
             @RequestParam String date,

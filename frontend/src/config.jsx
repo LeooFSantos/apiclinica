@@ -1,5 +1,6 @@
-// Configuração da API
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+// Configuração da API (CRA): variáveis de ambiente precisam começar com REACT_APP_
+// Ex.: REACT_APP_API_URL=http://localhost:8080/api
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 
 export const API_ENDPOINTS = {
   LOGIN: `${API_BASE_URL}/auth/login`,
@@ -14,6 +15,10 @@ export const API_ENDPOINTS = {
   CONSULTAS_DISPONIBILIDADE: `${API_BASE_URL}/consultas/disponibilidade`,
   CONSULTAS_MEDICO_CANCELAR_TODAS: `${API_BASE_URL}/consultas/medico/cancelar-todas`,
   MEDICOS_REQUESTS: `${API_BASE_URL}/medicos/requests`,
+
+  // Envio manual de e-mail (integração com microserviço via gateway, se houver rota)
+  // Obs: o sistema também envia automaticamente em cadastro/agendamento/cancelamento.
+  EMAIL_SEND: `${API_BASE_URL}/emails/send`,
 };
 
 export const AUTH_TOKEN_KEY = 'authToken';

@@ -26,15 +26,18 @@ public class ConsultaService {
     private final ConsultaRepository consultaRepository;
     private final PacienteRepository pacienteRepository;
     private final MedicoRepository medicoRepository;
+    private final EmailNotificationService emailNotificationService;
 
     public ConsultaService(
             ConsultaRepository consultaRepository,
             PacienteRepository pacienteRepository,
-            MedicoRepository medicoRepository
+            MedicoRepository medicoRepository,
+            EmailNotificationService emailNotificationService
     ) {
         this.consultaRepository = consultaRepository;
         this.pacienteRepository = pacienteRepository;
         this.medicoRepository = medicoRepository;
+        this.emailNotificationService = emailNotificationService;
     }
 
     @Transactional
@@ -110,7 +113,9 @@ public class ConsultaService {
         consulta.setMedico(medico);
         consulta.setDataHora(dataHora);
 
-        return consultaRepository.save(consulta);
+        Consulta saved = consultaRepository.save(consulta);
+        emailNotificationService.enviarConsultaAgendada(saved);
+        return saved;
     }
 
     @Transactional
@@ -127,6 +132,7 @@ public class ConsultaService {
 
         consulta.setMotivoCancelamento(dto.getMotivo());
         consulta.setCanceladaEm(LocalDateTime.now());
+        emailNotificationService.enviarConsultaCancelada(consulta);
     }
 
     public java.util.List<Consulta> listarPorMedicoENoDia(String nomeUsuario, java.time.LocalDate dia) {

@@ -13,12 +13,18 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import java.util.stream.Collectors;
 import java.util.Map;
 
+/**
+ * Endpoints de autenticação e identificação do usuário logado.
+ */
 @RestController
+@Tag(name = "Autenticação", description = "Login, refresh de token e dados do usuário autenticado")
 @RequestMapping("/api/auth")
 public class AuthController {
 
@@ -34,6 +40,7 @@ public class AuthController {
     @Autowired
     private MedicoRepository medicoRepository;
 
+    @Operation(summary = "Realiza login e retorna JWT")
     @PostMapping("/login")
     public ResponseEntity<?> autenticarUsuario(@Valid @RequestBody LoginDTO loginDTO) {
         try {
@@ -60,12 +67,14 @@ public class AuthController {
         }
     }
 
+    @Operation(summary = "Gera novo token JWT a partir do usuário")
     @PostMapping("/refresh")
     public ResponseEntity<?> renovarToken(@RequestParam String nomeUsuario) {
         String newToken = tokenProvider.generateTokenFromUsername(nomeUsuario);
         return ResponseEntity.ok(new JwtAuthResponseDTO(newToken, nomeUsuario));
     }
 
+    @Operation(summary = "Retorna informações do usuário autenticado")
     @GetMapping("/me")
     public ResponseEntity<?> me(Authentication authentication) {
         if (authentication == null) return ResponseEntity.status(401).build();

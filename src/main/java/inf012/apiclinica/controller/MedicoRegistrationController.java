@@ -6,6 +6,7 @@ import inf012.apiclinica.model.Endereco;
 import inf012.apiclinica.model.MedicoRequest;
 import inf012.apiclinica.repository.MedicoRequestRepository;
 import inf012.apiclinica.repository.MedicoRepository;
+import inf012.apiclinica.service.EmailNotificationService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -13,12 +14,18 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Endpoints de solicitação de cadastro de médicos e aprovação/rejeição pelo admin.
+ */
 @RestController
+@Tag(name = "Solicitações de Médicos", description = "Fluxo de solicitação e aprovação/rejeição de médicos")
 @RequestMapping("/api/medicos/requests")
 public class MedicoRegistrationController {
 
@@ -34,7 +41,11 @@ public class MedicoRegistrationController {
     @Autowired
     private InMemoryUserDetailsManager userDetailsManager;
 
+    @Autowired
+    private EmailNotificationService emailNotificationService;
+
     // Qualquer um pode solicitar registro como médico
+    @Operation(summary = "Cria solicitação de cadastro de médico")
     @PostMapping
     public ResponseEntity<?> criarSolicitacao(@Valid @RequestBody MedicoCreateDTO dto) {
         MedicoRequest req = new MedicoRequest();
@@ -52,12 +63,14 @@ public class MedicoRegistrationController {
     }
 
     // ADMIN: listar solicitações
+    @Operation(summary = "Lista solicitações pendentes (admin)")
     @GetMapping
     public ResponseEntity<List<MedicoRequest>> listarSolicitacoes() {
         return ResponseEntity.ok(requestRepository.findByApprovedFalseAndRejectedFalse());
     }
 
     // ADMIN: aprovar solicitação
+    @Operation(summary = "Aprova solicitação de médico (admin)")
     @PostMapping("/{id}/approve")
     public ResponseEntity<?> aprovar(@PathVariable Long id) {
         Optional<MedicoRequest> opt = requestRepository.findById(id);
@@ -89,11 +102,16 @@ public class MedicoRegistrationController {
 
         req.setApproved(true);
         requestRepository.save(req);
+        emailNotificationService.enviarRespostaSolicitacaoMedico(
+            new EmailNotificationService.MedicoRequestView(req.getNome(), req.getEmail()),
+            true
+        );
         requestRepository.delete(req);
         return ResponseEntity.ok(savedMed);
     }
 
     // ADMIN: rejeitar solicitação
+    @Operation(summary = "Rejeita solicitação de médico (admin)")
     @PostMapping("/{id}/reject")
     public ResponseEntity<?> rejeitar(@PathVariable Long id) {
         Optional<MedicoRequest> opt = requestRepository.findById(id);
@@ -103,6 +121,10 @@ public class MedicoRegistrationController {
         if (req.isRejected()) return ResponseEntity.badRequest().body("Já rejeitado");
         req.setRejected(true);
         requestRepository.save(req);
+        emailNotificationService.enviarRespostaSolicitacaoMedico(
+            new EmailNotificationService.MedicoRequestView(req.getNome(), req.getEmail()),
+            false
+        );
         requestRepository.delete(req);
         return ResponseEntity.ok().build();
     }
